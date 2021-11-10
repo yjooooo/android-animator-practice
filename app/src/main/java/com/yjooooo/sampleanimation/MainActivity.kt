@@ -3,7 +3,9 @@ package com.yjooooo.sampleanimation
 import android.animation.Animator
 import android.animation.AnimatorInflater
 import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
 import android.graphics.Path
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -18,9 +20,9 @@ class MainActivity : AppCompatActivity() {
     var beforeCycle = true
     private lateinit var faceInfo: ViewInfo
     private lateinit var bodyInfo: ViewInfo
-    private lateinit var faceRightUpAnimator: Animator
-    private lateinit var faceRightDownAnimator: Animator
-    private lateinit var faceLeftUpAnimator: Animator
+    private lateinit var faceRightUpAnimator: AnimatorSet
+    private lateinit var faceRightDownAnimator: AnimatorSet
+    private lateinit var faceLeftUpAnimator: AnimatorSet
     private lateinit var faceLeftDownAnimator: Animator
     private lateinit var faceDownToBodyAnim: Animator
     private lateinit var faceUpFromBodyAnim: Animator
@@ -36,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         setSnowmanInfo()
     }
 
-    private fun setSnowmanInfo(){
+    private fun setSnowmanInfo() {
         binding.ivSnowmanFace.post {
             with(binding.ivSnowmanFace) {
                 faceInfo = ViewInfo(this.x, this.y, this.width.toFloat(), this.height.toFloat())
@@ -93,7 +95,6 @@ class MainActivity : AppCompatActivity() {
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator?) {
                     super.onAnimationEnd(animation)
-                    disappearFace()
                 }
             })
         }
@@ -122,10 +123,27 @@ class MainActivity : AppCompatActivity() {
             arcTo(left, top, right, bottom, 270f, -90f, true)
         }
 
-        faceRightUpAnimator = getAnimator(goRightNext = true, goUpNext = false, path = rightUpPath)
-        faceRightDownAnimator =
-            getAnimator(goRightNext = false, goUpNext = true, path = rightDownPath)
-        faceLeftUpAnimator = getAnimator(goRightNext = false, goUpNext = false, path = leftUpPath)
+        val propertyRightUp = PropertyValuesHolder.ofFloat(View.ROTATION, -180f, 0f)
+        val propertyRightDown = PropertyValuesHolder.ofFloat(View.ROTATION, 0f, 180f)
+        val propertyLeftUp = PropertyValuesHolder.ofFloat(View.ROTATION, 180f, 0f)
+
+        val rotationRightUpAnimator = getAnimator(goUpNext = false, propertyRightUp)
+        val rotationRightDownAnimator = getAnimator(goUpNext = true, propertyRightDown)
+        val rotationLeftUpAnimator = getAnimator(goUpNext = false, propertyLeftUp)
+
+        faceRightUpAnimator = AnimatorSet().apply {
+            play(getAnimator(goRightNext = true, goUpNext = false, path = rightUpPath))
+                .with(rotationRightUpAnimator)
+        }
+        faceRightDownAnimator = AnimatorSet().apply {
+            play(getAnimator(goRightNext = false, goUpNext = true, path = rightDownPath))
+                .with(rotationRightDownAnimator)
+        }
+        faceLeftUpAnimator = AnimatorSet().apply {
+            play(getAnimator(goRightNext = false, goUpNext = false, path = leftUpPath))
+                .with(rotationLeftUpAnimator)
+        }
+
         faceLeftDownAnimator = getAnimator(goRightNext = true, goUpNext = true, path = leftDownPath)
 
         // ObjectAnimator 눈사람 얼굴 이동 애니메이션의 기준이되는 사각형 확인해보는 코드
@@ -153,7 +171,7 @@ class MainActivity : AppCompatActivity() {
                             }
                             false -> {
                                 faceResetShapeAnim.start()
-                                showTopButton()
+                                disappearFace()
                             }
                         }
                     }
@@ -185,7 +203,6 @@ class MainActivity : AppCompatActivity() {
                 duration = 1500
                 interpolator = DecelerateInterpolator(1.5f)
             }
-
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator?) {
                     super.onAnimationEnd(animation)
@@ -217,13 +234,23 @@ class MainActivity : AppCompatActivity() {
             })
         }
 
+    private fun getAnimator(goUpNext: Boolean, property: PropertyValuesHolder) =
+        ObjectAnimator.ofPropertyValuesHolder(binding.ivSnowmanFace, property).apply {
+            duration = 600
+        }
+
     private fun showFace() {
         binding.ivSnowmanFace.apply {
             alpha = 0f
             animate()
                 .alpha(1f)
                 .setDuration(500)
-                .setListener(null)
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator?) {
+                        super.onAnimationEnd(animation)
+                        showTopButton()
+                    }
+                })
         }
     }
 
