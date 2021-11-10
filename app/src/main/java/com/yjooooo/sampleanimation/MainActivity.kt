@@ -26,21 +26,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var faceUpFromBodyAnim: Animator
     private lateinit var faceDownShapeAnim: Animator
     private lateinit var faceUpShapeAnim: Animator
+    private lateinit var faceResetShapeAnim: Animator
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         setShapeAnimator()
-        binding.btnMain.setOnClickListener {
-            beforeCycle = true
-            setHorizontalAnimator()
-            faceUpShapeAnim.start()
-            faceRightUpAnimator.start()
-        }
+        setOnButtonClickListener()
+        setSnowmanInfo()
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
+    private fun setSnowmanInfo(){
         binding.ivSnowmanFace.post {
             with(binding.ivSnowmanFace) {
                 faceInfo = ViewInfo(this.x, this.y, this.width.toFloat(), this.height.toFloat())
@@ -50,6 +46,16 @@ class MainActivity : AppCompatActivity() {
             with(binding.ivSnowmanBody) {
                 bodyInfo = ViewInfo(this.x, this.y, this.width.toFloat(), this.height.toFloat())
             }
+        }
+    }
+
+    private fun setOnButtonClickListener() {
+        binding.btnMain.setOnClickListener {
+            binding.ivSnowmanFace.setImageResource(R.drawable.img_snowman_face_circle_eyes)
+            beforeCycle = true
+            setHorizontalAnimator()
+            faceUpShapeAnim.start()
+            faceRightUpAnimator.start()
         }
     }
 
@@ -80,6 +86,17 @@ class MainActivity : AppCompatActivity() {
             R.animator.animator_face_shape_up,
             binding.ivSnowmanFace
         )
+        faceResetShapeAnim = createAnimation(
+            R.animator.animator_face_shape_reset,
+            binding.ivSnowmanFace
+        ).apply {
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator?) {
+                    super.onAnimationEnd(animation)
+                    disappearFace()
+                }
+            })
+        }
     }
 
     private fun setHorizontalAnimator() {
@@ -135,10 +152,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                             false -> {
-                                createAnimation(
-                                    R.animator.animator_face_shape_reset,
-                                    binding.ivSnowmanFace
-                                ).start()
+                                faceResetShapeAnim.start()
                                 showTopButton()
                             }
                         }
@@ -202,6 +216,31 @@ class MainActivity : AppCompatActivity() {
                 }
             })
         }
+
+    private fun showFace() {
+        binding.ivSnowmanFace.apply {
+            alpha = 0f
+            animate()
+                .alpha(1f)
+                .setDuration(500)
+                .setListener(null)
+        }
+    }
+
+    private fun disappearFace() {
+        binding.ivSnowmanFace.apply {
+            animate()
+                .alpha(0f)
+                .setDuration(500)
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator?) {
+                        super.onAnimationEnd(animation)
+                        this@apply.setImageResource(R.drawable.img_snowman_face)
+                        showFace()
+                    }
+                })
+        }
+    }
 
     private fun showTopButton() {
         binding.ivSnowmanButtonTop.apply {
