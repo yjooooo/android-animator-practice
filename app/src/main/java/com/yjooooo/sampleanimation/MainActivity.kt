@@ -7,10 +7,8 @@ import android.animation.ObjectAnimator
 import android.graphics.Path
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
-import android.view.animation.AccelerateInterpolator
 import android.view.animation.BounceInterpolator
 import android.view.animation.DecelerateInterpolator
 import com.yjooooo.sampleanimation.databinding.ActivityMainBinding
@@ -26,15 +24,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var faceLeftDownAnimator: Animator
     private lateinit var faceDownToBodyAnim: Animator
     private lateinit var faceUpFromBodyAnim: Animator
+    private lateinit var faceDownShapeAnim: Animator
+    private lateinit var faceUpShapeAnim: Animator
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+        setShapeAnimator()
         binding.btnMain.setOnClickListener {
             setHorizontalAnimator()
-            createAnimation(
-                R.animator.animator_face_shape_up,
-                binding.ivSnowmanFace
-            ).start()
+            faceUpShapeAnim.start()
             faceRightUpAnimator.start()
         }
     }
@@ -53,6 +52,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun createAnimation(animatorResId: Int, target: View): Animator {
+        val anim = AnimatorInflater
+            .loadAnimator(
+                this,
+                animatorResId
+            ).apply {
+                setTarget(target)
+            }
+        return anim
+    }
+
+    private fun translateDpToPx(dp: Int) =
+        TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            dp.toFloat(),
+            resources.displayMetrics
+        )
+
+    private fun setShapeAnimator() {
+        faceDownShapeAnim = createAnimation(
+            R.animator.animator_face_shape_down,
+            binding.ivSnowmanFace
+        )
+        faceUpShapeAnim = createAnimation(
+            R.animator.animator_face_shape_up,
+            binding.ivSnowmanFace
+        )
+    }
+
     private fun setHorizontalAnimator() {
         val margin = bodyInfo.x - faceInfo.x - faceInfo.width
         val left = faceInfo.x
@@ -62,6 +90,7 @@ class MainActivity : AppCompatActivity() {
             bodyInfo.y + (bodyInfo.height - faceInfo.height) * 2 + faceInfo.height + translateDpToPx(
                 80
             )
+
         val rightUpPath = Path().apply {
             arcTo(left, top, right, bottom, 180f, 90f, true)
         }
@@ -76,14 +105,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         faceRightUpAnimator = getAnimator(goRightNext = true, goUpNext = false, path = rightUpPath)
-        faceRightDownAnimator = getAnimator(goRightNext = false, goUpNext = true, path = rightDownPath)
+        faceRightDownAnimator =
+            getAnimator(goRightNext = false, goUpNext = true, path = rightDownPath)
         faceLeftUpAnimator = getAnimator(goRightNext = false, goUpNext = false, path = leftUpPath)
         faceLeftDownAnimator = getAnimator(goRightNext = true, goUpNext = true, path = leftDownPath)
 
-
+        // ObjectAnimator 눈사람 얼굴 이동 애니메이션의 기준이되는 사각형 확인해보는 코드
+//        View(this).apply {
+//            setBackgroundColor(Color.parseColor("#aa000000"))
+//            x = left
+//            y = top
+//            layoutParams = ViewGroup.LayoutParams((right-left).toInt(),(bottom-top).toInt())
+//            binding.container.addView(this)
+//        }
     }
 
-    private fun setFaceDownToBodyAnim(goRightNext: Boolean, goUpNext: Boolean) {
+    private fun setFaceDownToBodyAnim(goRightNext: Boolean) {
         faceDownToBodyAnim =
             createAnimation(R.animator.animator_face_down_to_body, binding.ivSnowmanFace).apply {
                 addListener(object : AnimatorListenerAdapter() {
@@ -91,25 +128,13 @@ class MainActivity : AppCompatActivity() {
                         super.onAnimationEnd(animation)
                         when (goRightNext) {
                             true -> {
-                                when (goUpNext) {
-                                    true -> { // Next : RightUp
-                                        if(beforeCycle) {
-                                            setFaceUpFromBodyAnim(true, false)
-                                            beforeCycle = false
-                                        }
-                                    }
-                                    false -> { // Next : RightDown
-                                    }
+                                if (beforeCycle) {
+                                    setFaceUpFromBodyAnim()
+                                    beforeCycle = false
                                 }
                             }
                             false -> {
-                                when (goUpNext) {
-                                    true -> { // Next : LeftUp
-                                        setFaceUpFromBodyAnim(false, false)
-                                    }
-                                    false -> { // Next : LeftDown
-                                    }
-                                }
+                                showTopButton()
                             }
                         }
                     }
@@ -118,40 +143,14 @@ class MainActivity : AppCompatActivity() {
         faceDownToBodyAnim.start()
     }
 
-    private fun setFaceUpFromBodyAnim(goRightNext: Boolean, goUpNext: Boolean) {
+    private fun setFaceUpFromBodyAnim() {
         faceUpFromBodyAnim =
             createAnimation(R.animator.animator_face_up_from_body, binding.ivSnowmanFace).apply {
                 addListener(object : AnimatorListenerAdapter() {
                     override fun onAnimationEnd(animation: Animator?) {
                         super.onAnimationEnd(animation)
-                        when (goRightNext) {
-                            true -> {
-                                when (goUpNext) {
-                                    true -> { // Next : RightUp
-                                    }
-                                    false -> { // Next : RightDown
-                                        createAnimation(
-                                            R.animator.animator_face_shape_down,
-                                            binding.ivSnowmanFace
-                                        ).start()
-                                        faceRightDownAnimator.start()
-                                    }
-                                }
-                            }
-                            false -> {
-                                when (goUpNext) {
-                                    true -> { // Next : LeftUp
-                                    }
-                                    false -> { // Next : LeftDown
-                                        createAnimation(
-                                            R.animator.animator_face_shape_down,
-                                            binding.ivSnowmanFace
-                                        ).start()
-                                        faceLeftDownAnimator.start()
-                                    }
-                                }
-                            }
-                        }
+                        faceRightDownAnimator.start()
+                        faceDownShapeAnim.start()
                     }
                 })
             }
@@ -175,28 +174,22 @@ class MainActivity : AppCompatActivity() {
                         true -> {
                             when (goUpNext) {
                                 true -> { // Next : RightUp
-                                    createAnimation(
-                                        R.animator.animator_face_shape_up,
-                                        binding.ivSnowmanFace
-                                    ).start()
+                                    faceUpShapeAnim.start()
                                     faceRightUpAnimator.start()
                                 }
                                 false -> { // Next : RightDown
-                                    setFaceDownToBodyAnim(true, true)
+                                    setFaceDownToBodyAnim(goRightNext = true)
                                 }
                             }
                         }
                         false -> {
                             when (goUpNext) {
                                 true -> { // Next : LeftUp
-                                    createAnimation(
-                                        R.animator.animator_face_shape_up,
-                                        binding.ivSnowmanFace
-                                    ).start()
+                                    faceUpShapeAnim.start()
                                     faceLeftUpAnimator.start()
                                 }
                                 false -> { // Next : LeftDown
-                                    setFaceDownToBodyAnim(false, true)
+                                    setFaceDownToBodyAnim(goRightNext = false)
                                 }
                             }
                         }
@@ -205,21 +198,46 @@ class MainActivity : AppCompatActivity() {
             })
         }
 
-    private fun createAnimation(animatorResId: Int, target: View): Animator {
-        val anim = AnimatorInflater
-            .loadAnimator(
-                this,
-                animatorResId
-            ).apply {
-                setTarget(target)
-            }
-        return anim
+    private fun showTopButton() {
+        binding.ivSnowmanButtonTop.apply {
+            alpha = 0f
+            visibility = View.VISIBLE
+            animate()
+                .alpha(1f)
+                .setDuration(500)
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator?) {
+                        super.onAnimationEnd(animation)
+                        showMiddleButton()
+                    }
+                })
+        }
     }
 
-    private fun translateDpToPx(dp: Int) =
-        TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            dp.toFloat(),
-            resources.displayMetrics
-        )
+    private fun showMiddleButton() {
+        binding.ivSnowmanButtonMiddle.apply {
+            alpha = 0f
+            visibility = View.VISIBLE
+            animate()
+                .alpha(1f)
+                .setDuration(500)
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator?) {
+                        super.onAnimationEnd(animation)
+                        showBottomButton()
+                    }
+                })
+        }
+    }
+
+    private fun showBottomButton() {
+        binding.ivSnowmanButtonBottom.apply {
+            alpha = 0f
+            visibility = View.VISIBLE
+            animate()
+                .alpha(1f)
+                .setDuration(500)
+                .setListener(null)
+        }
+    }
 }
