@@ -31,7 +31,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/desc_snowman_face"
-        android:src="@drawable/img_snowman_face"
+        android:src="@drawable/img_snowman_face_circle_eyes"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/iv_snowman_body"
         app:layout_constraintStart_toStartOf="parent" />

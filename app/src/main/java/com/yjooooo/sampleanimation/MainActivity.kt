@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setShapeAnimator()
         binding.btnMain.setOnClickListener {
+            beforeCycle = true
             setHorizontalAnimator()
             faceUpShapeAnim.start()
             faceRightUpAnimator.start()
@@ -134,6 +135,10 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                             false -> {
+                                createAnimation(
+                                    R.animator.animator_face_shape_reset,
+                                    binding.ivSnowmanFace
+                                ).start()
                                 showTopButton()
                             }
                         }
