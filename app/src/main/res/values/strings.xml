@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SampleAnimation</string>
+    <string name="desc_snowman_body">Image of snowman\'s body</string>
+    <string name="desc_snowman_face">Image of snowman\'s face</string>
+</resources>
