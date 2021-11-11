@@ -6,13 +6,16 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
+import android.graphics.Color
 import android.graphics.Path
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.BounceInterpolator
 import android.view.animation.DecelerateInterpolator
+import android.widget.ImageView
 import com.yjooooo.sampleanimation.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -29,6 +32,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var faceDownShapeAnim: Animator
     private lateinit var faceUpShapeAnim: Animator
     private lateinit var faceResetShapeAnim: Animator
+    private lateinit var faceDisappearAnim: Animator
+    private lateinit var faceShowAnim: Animator
+    private lateinit var bodyButtonTopAnim: Animator
+    private lateinit var bodyButtonMiddleAnim: Animator
+    private lateinit var bodyButtonBottomAnim: Animator
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,69 +99,15 @@ class MainActivity : AppCompatActivity() {
         faceResetShapeAnim = createAnimation(
             R.animator.animator_face_shape_reset,
             binding.ivSnowmanFace
-        ).apply {
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator?) {
-                    super.onAnimationEnd(animation)
-                }
-            })
-        }
-    }
+        )
 
-    private fun setHorizontalAnimator() {
-        val margin = bodyInfo.x - faceInfo.x - faceInfo.width
-        val left = faceInfo.x
-        val top = bodyInfo.y - faceInfo.height - translateDpToPx(80)
-        val right = faceInfo.x + bodyInfo.width + faceInfo.width + margin * 2
-        val bottom =
-            bodyInfo.y + (bodyInfo.height - faceInfo.height) * 2 + faceInfo.height + translateDpToPx(
-                80
-            )
-
-        val rightUpPath = Path().apply {
-            arcTo(left, top, right, bottom, 180f, 90f, true)
-        }
-        val rightDownPath = Path().apply {
-            arcTo(left, top, right, bottom, 270f, 90f, true)
-        }
-        val leftUpPath = Path().apply {
-            arcTo(left, top, right, bottom, 0f, -90f, true)
-        }
-        val leftDownPath = Path().apply {
-            arcTo(left, top, right, bottom, 270f, -90f, true)
-        }
-
-        val propertyRightUp = PropertyValuesHolder.ofFloat(View.ROTATION, -180f, 0f)
-        val propertyRightDown = PropertyValuesHolder.ofFloat(View.ROTATION, 0f, 180f)
-        val propertyLeftUp = PropertyValuesHolder.ofFloat(View.ROTATION, 180f, 0f)
-
-        val rotationRightUpAnimator = getAnimator(goUpNext = false, propertyRightUp)
-        val rotationRightDownAnimator = getAnimator(goUpNext = true, propertyRightDown)
-        val rotationLeftUpAnimator = getAnimator(goUpNext = false, propertyLeftUp)
-
-        faceRightUpAnimator = AnimatorSet().apply {
-            play(getAnimator(goRightNext = true, goUpNext = false, path = rightUpPath))
-                .with(rotationRightUpAnimator)
-        }
-        faceRightDownAnimator = AnimatorSet().apply {
-            play(getAnimator(goRightNext = false, goUpNext = true, path = rightDownPath))
-                .with(rotationRightDownAnimator)
-        }
-        faceLeftUpAnimator = AnimatorSet().apply {
-            play(getAnimator(goRightNext = false, goUpNext = false, path = leftUpPath))
-                .with(rotationLeftUpAnimator)
-        }
-
-        faceLeftDownAnimator = getAnimator(goRightNext = true, goUpNext = true, path = leftDownPath)
-
-        // ObjectAnimator 눈사람 얼굴 이동 애니메이션의 기준이되는 사각형 확인해보는 코드
-//        View(this).apply {
-//            setBackgroundColor(Color.parseColor("#aa000000"))
-//            x = left
-//            y = top
-//            layoutParams = ViewGroup.LayoutParams((right-left).toInt(),(bottom-top).toInt())
-//            binding.container.addView(this)
-//        }
+        val showProperty = PropertyValuesHolder.ofFloat(View.ALPHA, 0f, 1f)
+        val disappearProperty = PropertyValuesHolder.ofFloat(View.ALPHA, 1f, 0f)
+        faceDisappearAnim = getAnimator(binding.ivSnowmanFace, disappearProperty)
+        faceShowAnim = getAnimator(binding.ivSnowmanFace, showProperty)
+        bodyButtonTopAnim = getAnimator(binding.ivSnowmanButtonTop, showProperty)
+        bodyButtonMiddleAnim = getAnimator(binding.ivSnowmanButtonMiddle, showProperty)
+        bodyButtonBottomAnim = getAnimator(binding.ivSnowmanButtonBottom, showProperty)
     }
 
     private fun setFaceDownToBodyAnim(goRightNext: Boolean) {
@@ -192,6 +146,68 @@ class MainActivity : AppCompatActivity() {
                 })
             }
         faceUpFromBodyAnim.start()
+    }
+
+    private fun setHorizontalAnimator() {
+        val margin = bodyInfo.x - faceInfo.x - faceInfo.width
+        val left = faceInfo.x
+        val top = bodyInfo.y - faceInfo.height - translateDpToPx(80)
+        val right = faceInfo.x + bodyInfo.width + faceInfo.width + margin * 2
+        val bottom =
+            bodyInfo.y + (bodyInfo.height - faceInfo.height) * 2 + faceInfo.height + translateDpToPx(
+                80
+            )
+
+        val rightUpPath = Path().apply {
+            arcTo(left, top, right, bottom, 180f, 90f, true)
+        }
+        val rightDownPath = Path().apply {
+            arcTo(left, top, right, bottom, 270f, 90f, true)
+        }
+        val leftUpPath = Path().apply {
+            arcTo(left, top, right, bottom, 0f, -90f, true)
+        }
+        val leftDownPath = Path().apply {
+            arcTo(left, top, right, bottom, 270f, -90f, true)
+        }
+
+        val propertyRightUp = PropertyValuesHolder.ofFloat(View.ROTATION, -180f, 0f)
+        val propertyRightDown = PropertyValuesHolder.ofFloat(View.ROTATION, 0f, 180f)
+        val propertyLeftUp = PropertyValuesHolder.ofFloat(View.ROTATION, 180f, 0f)
+
+        val rotationRightUpAnimator = getAnimator(binding.ivSnowmanFace, propertyRightUp)
+        val rotationRightDownAnimator = getAnimator(binding.ivSnowmanFace, propertyRightDown)
+        val rotationLeftUpAnimator = getAnimator(binding.ivSnowmanFace, propertyLeftUp)
+
+        faceRightUpAnimator = AnimatorSet().apply {
+            playTogether(
+                getAnimator(goRightNext = true, goUpNext = false, path = rightUpPath),
+                rotationRightUpAnimator
+            )
+        }
+        faceRightDownAnimator = AnimatorSet().apply {
+            playTogether(
+                getAnimator(goRightNext = false, goUpNext = true, path = rightDownPath),
+                rotationRightDownAnimator
+            )
+        }
+        faceLeftUpAnimator = AnimatorSet().apply {
+            playTogether(
+                getAnimator(goRightNext = false, goUpNext = false, path = leftUpPath),
+                rotationLeftUpAnimator
+            )
+        }
+
+        faceLeftDownAnimator = getAnimator(goRightNext = true, goUpNext = true, path = leftDownPath)
+
+        // ObjectAnimator 눈사람 얼굴 이동 애니메이션의 기준이되는 사각형 확인해보는 코드
+//        View(this).apply {
+//            setBackgroundColor(Color.parseColor("#aa000000"))
+//            x = left
+//            y = top
+//            layoutParams = ViewGroup.LayoutParams((right-left).toInt(),(bottom-top).toInt())
+//            binding.container.addView(this)
+//        }
     }
 
     private fun getAnimator(goRightNext: Boolean, goUpNext: Boolean, path: Path) =
@@ -234,81 +250,39 @@ class MainActivity : AppCompatActivity() {
             })
         }
 
-    private fun getAnimator(goUpNext: Boolean, property: PropertyValuesHolder) =
-        ObjectAnimator.ofPropertyValuesHolder(binding.ivSnowmanFace, property).apply {
+    private fun getAnimator(imageView: ImageView, property: PropertyValuesHolder) =
+        ObjectAnimator.ofPropertyValuesHolder(imageView, property).apply {
             duration = 600
         }
 
-    private fun showFace() {
-        binding.ivSnowmanFace.apply {
-            alpha = 0f
-            animate()
-                .alpha(1f)
-                .setDuration(500)
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator?) {
-                        super.onAnimationEnd(animation)
-                        showTopButton()
-                    }
-                })
-        }
-    }
-
     private fun disappearFace() {
-        binding.ivSnowmanFace.apply {
-            animate()
-                .alpha(0f)
-                .setDuration(500)
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator?) {
-                        super.onAnimationEnd(animation)
-                        this@apply.setImageResource(R.drawable.img_snowman_face)
-                        showFace()
-                    }
-                })
-        }
+        faceDisappearAnim.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator?) {
+                super.onAnimationEnd(animation)
+                binding.ivSnowmanFace.setImageResource(R.drawable.img_snowman_face)
+                showFace()
+            }
+        })
+        faceDisappearAnim.start()
     }
 
-    private fun showTopButton() {
-        binding.ivSnowmanButtonTop.apply {
-            alpha = 0f
-            visibility = View.VISIBLE
-            animate()
-                .alpha(1f)
-                .setDuration(500)
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator?) {
-                        super.onAnimationEnd(animation)
-                        showMiddleButton()
-                    }
-                })
-        }
+    private fun showFace() {
+        faceShowAnim.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator?) {
+                super.onAnimationEnd(animation)
+                showButtons()
+            }
+        })
+        faceShowAnim.start()
     }
 
-    private fun showMiddleButton() {
-        binding.ivSnowmanButtonMiddle.apply {
-            alpha = 0f
-            visibility = View.VISIBLE
-            animate()
-                .alpha(1f)
-                .setDuration(500)
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator?) {
-                        super.onAnimationEnd(animation)
-                        showBottomButton()
-                    }
-                })
-        }
-    }
-
-    private fun showBottomButton() {
-        binding.ivSnowmanButtonBottom.apply {
-            alpha = 0f
-            visibility = View.VISIBLE
-            animate()
-                .alpha(1f)
-                .setDuration(500)
-                .setListener(null)
-        }
+    private fun showButtons() {
+        AnimatorSet().apply {
+            play(bodyButtonTopAnim).before(AnimatorSet().apply {
+                play(bodyButtonMiddleAnim).before(
+                    bodyButtonBottomAnim
+                )
+            })
+        }.start()
     }
 }
